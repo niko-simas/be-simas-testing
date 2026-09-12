@@ -26,31 +26,6 @@ markdown/                  Dokumentasi planning & spesifikasi MVP
 
 ## Setup
 
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=simas_db
-DB_USERNAME=postgres
-DB_PASSWORD=
-
-REDIS_HOST=localhost
-REDIS_PORT=6379
-REDIS_PASSWORD=
-
-JWT_SECRET=
-
-MAIL_HOST=
-MAIL_PORT=587
-MAIL_USERNAME=
-MAIL_PASSWORD=
-MAIL_FROM=
-MAIL_FROM_NAME=SIMAS
-MAIL_ENCRYPTION=tls
-
-WEB_GOOGLE_CLIENT_ID=
-MOBILE_GOOGLE_CLIENT_ID=
-ANDROID_PACKAGE_NAME=
-```
-
 **1. Jalankan**
 
 ```bash
