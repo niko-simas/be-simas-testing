@@ -1,0 +1,36 @@
+# Environment
+.env
+
+# Binary
+api.exe
+api
+main
+
+# Firebase credentials
+firebase_sdk/
+
+# Logs
+*.log
+
+# OS
+Thumbs.db
+.DS_Store
+
+# MD
+markdown/
+
+# Migrations
+migrations/
+
+# Postman
+postman/
+
+# Skills
+skills/
+
+server_err.log
+server.log
+
+# Docker
+Dockerfile
+.dockerignore
