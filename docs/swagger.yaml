@@ -1,0 +1,1551 @@
+basePath: /
+definitions:
+  handler.ForceUpdateRequest:
+    properties:
+      confirm_password:
+        minLength: 8
+        type: string
+      new_password:
+        minLength: 8
+        type: string
+      old_password:
+        type: string
+    required:
+    - confirm_password
+    - new_password
+    - old_password
+    type: object
+  handler.InternalLoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  handler.LoginRequest:
+    properties:
+      id_token:
+        type: string
+    required:
+    - id_token
+    type: object
+  handler.PusatLoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  handler.RegisterSuperAdminRequest:
+    properties:
+      email:
+        type: string
+      name:
+        maxLength: 255
+        minLength: 3
+        type: string
+      password:
+        minLength: 8
+        type: string
+    required:
+    - email
+    - name
+    - password
+    type: object
+  model.CompleteOAuthRequest:
+    properties:
+      no_whatsapp:
+        maxLength: 15
+        minLength: 9
+        type: string
+      temp_user_id:
+        type: string
+    required:
+    - no_whatsapp
+    - temp_user_id
+    type: object
+  model.ErrorResponse:
+    properties:
+      code:
+        type: string
+      message:
+        type: string
+    type: object
+  model.ForceUpdateResponse:
+    properties:
+      account_state:
+        type: string
+      expires_in:
+        type: integer
+      temp_token:
+        type: string
+    type: object
+  model.MobileLoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  model.MobileOAuthRequest:
+    properties:
+      google_token:
+        type: string
+    required:
+    - google_token
+    type: object
+  model.OAuthPendingResponse:
+    properties:
+      account_state:
+        type: string
+      avatar_url:
+        type: string
+      email:
+        type: string
+      expires_in:
+        type: integer
+      name:
+        type: string
+      temp_user_id:
+        type: string
+    type: object
+  model.RefreshRequest:
+    properties:
+      refresh_token:
+        type: string
+    required:
+    - refresh_token
+    type: object
+  model.RegisterRequest:
+    properties:
+      email:
+        type: string
+      nama_lengkap:
+        maxLength: 255
+        minLength: 3
+        type: string
+      no_whatsapp:
+        maxLength: 15
+        minLength: 9
+        type: string
+      password:
+        minLength: 8
+        type: string
+    required:
+    - email
+    - nama_lengkap
+    - no_whatsapp
+    - password
+    type: object
+  model.RegisterResponse:
+    properties:
+      email:
+        type: string
+      expires_in:
+        type: integer
+      message:
+        type: string
+    type: object
+  model.ResendOTPRequest:
+    properties:
+      email:
+        type: string
+    required:
+    - email
+    type: object
+  model.ResendResponse:
+    properties:
+      expires_in:
+        type: integer
+      message:
+        type: string
+    type: object
+  model.Sekolah:
+    properties:
+      admin_sekolah_id:
+        type: string
+      akta_pendirian_url:
+        type: string
+      alamat:
+        type: string
+      created_at:
+        type: string
+      desa_id:
+        type: integer
+      email:
+        type: string
+      id:
+        type: string
+      jenjang:
+        type: string
+      jumlah_pendidik:
+        type: integer
+      jumlah_siswa:
+        type: integer
+      kabupaten_id:
+        type: integer
+      kecamatan_id:
+        type: integer
+      kepala_sekolah_nama:
+        type: string
+      kepala_sekolah_nip:
+        type: string
+      kode_pos:
+        type: string
+      latitude:
+        type: number
+      logo_url:
+        type: string
+      longitude:
+        type: number
+      nama:
+        type: string
+      nib_url:
+        type: string
+      npsn:
+        type: string
+      provinsi_id:
+        type: integer
+      siop_url:
+        type: string
+      sk_pendirian:
+        type: string
+      sk_pendirian_url:
+        type: string
+      status:
+        type: string
+      tanggal_berdiri:
+        type: string
+      telepon:
+        type: string
+      tracking_code:
+        type: string
+      updated_at:
+        type: string
+      website:
+        type: string
+      yayasan:
+        type: string
+    type: object
+  model.SekolahProgressResponse:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      nama:
+        type: string
+      state_logs:
+        items:
+          $ref: '#/definitions/model.SekolahStateLogSummary'
+        type: array
+      status:
+        type: string
+      status_label:
+        type: string
+      tracking_code:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  model.SekolahRequest:
+    properties:
+      alamat:
+        type: string
+      desa_id:
+        type: integer
+      email:
+        maxLength: 255
+        type: string
+      jenjang:
+        enum:
+        - sd_mi
+        - smp_mts
+        - sma_smk_ma_mak
+        type: string
+      kabupaten_id:
+        type: integer
+      kecamatan_id:
+        type: integer
+      kepala_sekolah_nama:
+        type: string
+      kepala_sekolah_nip:
+        type: string
+      kode_pos:
+        type: string
+      latitude:
+        type: number
+      longitude:
+        type: number
+      nama:
+        maxLength: 255
+        type: string
+      npsn:
+        type: string
+      provinsi_id:
+        type: integer
+      sk_pendirian:
+        type: string
+      tanggal_berdiri:
+        type: string
+      telepon:
+        type: string
+      website:
+        type: string
+      yayasan:
+        type: string
+    required:
+    - email
+    - jenjang
+    - nama
+    type: object
+  model.SekolahStateLogSummary:
+    properties:
+      catatan:
+        type: string
+      created_at:
+        type: string
+      status_baru:
+        type: string
+      status_label:
+        type: string
+    type: object
+  model.SekolahUpdateRequest:
+    properties:
+      alamat:
+        type: string
+      desa_id:
+        type: integer
+      jenjang:
+        enum:
+        - sd_mi
+        - smp_mts
+        - sma_smk_ma_mak
+        type: string
+      kabupaten_id:
+        type: integer
+      kecamatan_id:
+        type: integer
+      kepala_sekolah_nama:
+        type: string
+      kepala_sekolah_nip:
+        type: string
+      kode_pos:
+        type: string
+      latitude:
+        type: number
+      logo_url:
+        type: string
+      longitude:
+        type: number
+      nama:
+        type: string
+      npsn:
+        type: string
+      provinsi_id:
+        type: integer
+      sk_pendirian:
+        type: string
+      tanggal_berdiri:
+        type: string
+      telepon:
+        type: string
+      website:
+        type: string
+      yayasan:
+        type: string
+    type: object
+  model.SekolahVerifikasiRequest:
+    properties:
+      catatan:
+        type: string
+      status_baru:
+        enum:
+        - menunggu_verifikasi
+        - aktif
+        - ditolak
+        type: string
+    required:
+    - status_baru
+    type: object
+  model.SessionResponse:
+    properties:
+      access_token:
+        type: string
+      account_status:
+        type: string
+      expires_in:
+        type: integer
+      onboarding_status:
+        type: string
+      refresh_token:
+        type: string
+      user:
+        $ref: '#/definitions/model.User'
+    type: object
+  model.StatusVerifikasiResponse:
+    properties:
+      account_status:
+        type: string
+      status:
+        type: string
+    type: object
+  model.User:
+    properties:
+      account_status:
+        type: string
+      avatar_url:
+        type: string
+      created_at:
+        type: string
+      email:
+        type: string
+      email_verified:
+        type: boolean
+      email_verified_at:
+        type: string
+      google_id:
+        type: string
+      id:
+        type: string
+      is_password_updated:
+        type: boolean
+      last_login_at:
+        type: string
+      name:
+        type: string
+      no_whatsapp:
+        type: string
+      onboarding_status:
+        type: string
+      provider:
+        type: string
+      role:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  model.VerifyOTPRequest:
+    properties:
+      email:
+        type: string
+      otp_code:
+        type: string
+    required:
+    - email
+    - otp_code
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@simas.id
+    name: Support
+  description: API documentation for SIMAS (Sistem Informasi Manajemen Sekolah) backend.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: SIMAS API
+  version: "1.0"
+paths:
+  /api/v1/auth/mobile/login:
+    post:
+      consumes:
+      - application/json
+      description: Login with email and password for mobile users.
+      parameters:
+      - description: Login request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.MobileLoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SessionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Mobile user login
+      tags:
+      - Mobile Auth
+  /api/v1/auth/mobile/oauth:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate mobile user using Google token. Returns session or
+        pending state if new user.
+      parameters:
+      - description: Google OAuth request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.MobileOAuthRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SessionResponse'
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/model.OAuthPendingResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Google OAuth login for mobile
+      tags:
+      - Mobile Auth
+  /api/v1/auth/mobile/oauth/complete:
+    post:
+      consumes:
+      - application/json
+      description: Complete Google OAuth registration for mobile by providing temp_user_id
+        and WhatsApp number.
+      parameters:
+      - description: Complete OAuth request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.CompleteOAuthRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SessionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Complete mobile OAuth registration
+      tags:
+      - Mobile Auth
+  /api/v1/auth/mobile/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user with email, WhatsApp, and password. An OTP
+        will be sent to the email.
+      parameters:
+      - description: Registration request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.RegisterResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Register new mobile user
+      tags:
+      - Mobile Auth
+  /api/v1/auth/mobile/resend-otp:
+    post:
+      consumes:
+      - application/json
+      description: Resend OTP code to the user's email.
+      parameters:
+      - description: Resend OTP request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.ResendOTPRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.ResendResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Resend OTP code
+      tags:
+      - Mobile Auth
+  /api/v1/auth/mobile/verify-otp:
+    post:
+      consumes:
+      - application/json
+      description: Verify the OTP code sent to the user's email during registration.
+      parameters:
+      - description: OTP verification request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.VerifyOTPRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SessionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Verify OTP code
+      tags:
+      - Mobile Auth
+  /api/v1/auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Refresh access token using a valid refresh token.
+      parameters:
+      - description: Refresh token request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.RefreshRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SessionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Refresh access token
+      tags:
+      - Mobile Auth
+  /api/v1/mobile/status-verifikasi:
+    get:
+      description: Returns the verification and account status for the authenticated
+        mobile user.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.StatusVerifikasiResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get mobile user verification status
+      tags:
+      - Mobile
+  /api/v1/sekolah:
+    get:
+      consumes:
+      - application/json
+      description: List semua sekolah dengan filter status, search, dan pagination.
+        Super Admin only.
+      parameters:
+      - description: 'Filter status: pengajuan, menunggu_verifikasi, aktif, nonaktif,
+          ditolak'
+        in: query
+        name: status
+        type: string
+      - description: Search nama atau NPSN
+        in: query
+        name: search
+        type: string
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{data[], total, page, limit}'
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List sekolah dengan filter
+      tags:
+      - Sekolah
+    post:
+      consumes:
+      - application/json
+      description: 'Submit data sekolah tanpa file. Response mengembalikan sekolah_id
+        dan tracking_code. Step 2: upload dokumen via POST /sekolah/:id/dokumen'
+      parameters:
+      - description: Data sekolah
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.SekolahRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: '{id, tracking_code, status}'
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: 'Step 1: Pengajuan baru sekolah (data saja)'
+      tags:
+      - Sekolah
+  /api/v1/sekolah/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Detail sekolah dengan history state log. Super Admin only.
+      parameters:
+      - description: Sekolah ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{sekolah, state_logs}'
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Detail sekolah + state log
+      tags:
+      - Sekolah
+    put:
+      consumes:
+      - application/json
+      description: Update data sekolah. Super Admin only.
+      parameters:
+      - description: Sekolah ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Update request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.SekolahUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Sekolah'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update data sekolah
+      tags:
+      - Sekolah
+  /api/v1/sekolah/{id}/dokumen-legalitas:
+    get:
+      consumes:
+      - application/json
+      description: Generate presigned URL untuk preview/download 4 dokumen legalitas.
+        Super Admin only.
+      parameters:
+      - description: Sekolah ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get presigned URL dokumen legalitas
+      tags:
+      - Sekolah
+  /api/v1/sekolah/{id}/verifikasi:
+    put:
+      consumes:
+      - application/json
+      description: 'Super Admin setuju/tolak pengajuan sekolah. Setuju: status ->
+        aktif (auto-generate akun admin_sekolah). Tolak: status -> ditolak.'
+      parameters:
+      - description: Sekolah ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Verifikasi request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.SekolahVerifikasiRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Sekolah'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Verifikasi pengajuan sekolah
+      tags:
+      - Sekolah
+  /api/v1/sekolah/{sekolah_id}/dokumen:
+    post:
+      consumes:
+      - multipart/form-data
+      description: 'Upload 4 file PDF legalitas via multipart/form-data: akta_pendirian,
+        nib, sk_pendirian, siop. Max 3MB per file. Status otomatis berubah ke "menunggu_verifikasi"'
+      parameters:
+      - description: Sekolah ID dari step 1
+        in: path
+        name: sekolah_id
+        required: true
+        type: string
+      - description: Akta Pendirian Yayasan/Badan Hukum (PDF, max 3MB)
+        in: formData
+        name: akta_pendirian
+        required: true
+        type: file
+      - description: Nomor Induk Berusaha (PDF, max 3MB)
+        in: formData
+        name: nib
+        required: true
+        type: file
+      - description: SK Pendirian Sekolah (PDF, max 3MB)
+        in: formData
+        name: sk_pendirian
+        required: true
+        type: file
+      - description: Surat Izin Operasional (PDF, max 3MB)
+        in: formData
+        name: siop
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Sekolah'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: 'Step 2: Upload 4 dokumen legalitas (form-data)'
+      tags:
+      - Sekolah
+  /api/v1/sekolah/jenjang:
+    get:
+      consumes:
+      - application/json
+      description: Public endpoint untuk mendapatkan daftar jenjang pendidikan.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              additionalProperties:
+                type: string
+              type: object
+            type: array
+      summary: List jenjang pendidikan (master data)
+      tags:
+      - Sekolah
+  /api/v1/sekolah/lengkap:
+    post:
+      consumes:
+      - multipart/form-data
+      description: 'Submit data sekolah + 4 file PDF legalitas via multipart/form-data.
+        Status langsung "menunggu_verifikasi". Field data sama dengan SekolahRequest,
+        file: akta_pendirian, nib, sk_pendirian, siop.'
+      parameters:
+      - description: Nama sekolah
+        in: formData
+        name: nama
+        required: true
+        type: string
+      - description: Jenjang
+        enum:
+        - sd_mi
+        - smp_mts
+        - sma_smk_ma_mak
+        in: formData
+        name: jenjang
+        required: true
+        type: string
+      - description: Email sekolah
+        in: formData
+        name: email
+        required: true
+        type: string
+      - description: NPSN
+        in: formData
+        name: npsn
+        type: string
+      - description: Alamat
+        in: formData
+        name: alamat
+        type: string
+      - description: Provinsi ID
+        in: formData
+        name: provinsi_id
+        type: integer
+      - description: Kabupaten ID
+        in: formData
+        name: kabupaten_id
+        type: integer
+      - description: Kecamatan ID
+        in: formData
+        name: kecamatan_id
+        type: integer
+      - description: Desa ID
+        in: formData
+        name: desa_id
+        type: integer
+      - description: Kode pos
+        in: formData
+        name: kode_pos
+        type: string
+      - description: Latitude
+        in: formData
+        name: latitude
+        type: number
+      - description: Longitude
+        in: formData
+        name: longitude
+        type: number
+      - description: Telepon
+        in: formData
+        name: telepon
+        type: string
+      - description: Website
+        in: formData
+        name: website
+        type: string
+      - description: Yayasan
+        in: formData
+        name: yayasan
+        type: string
+      - description: Nama kepala sekolah
+        in: formData
+        name: kepala_sekolah_nama
+        type: string
+      - description: NIP kepala sekolah
+        in: formData
+        name: kepala_sekolah_nip
+        type: string
+      - description: YYYY-MM-DD
+        in: formData
+        name: tanggal_berdiri
+        type: string
+      - description: Nomor SK pendirian
+        in: formData
+        name: sk_pendirian
+        type: string
+      - description: Akta Pendirian (PDF, max 3MB)
+        in: formData
+        name: akta_pendirian
+        required: true
+        type: file
+      - description: NIB (PDF, max 3MB)
+        in: formData
+        name: nib
+        required: true
+        type: file
+      - description: SK Pendirian (PDF, max 3MB)
+        in: formData
+        name: sk_pendirian_file
+        required: true
+        type: file
+      - description: Surat Izin Operasional (PDF, max 3MB)
+        in: formData
+        name: siop
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: '{id, tracking_code, status, status_label, message}'
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Pengajuan baru sekolah dengan data + dokumen legalitas sekaligus
+      tags:
+      - Sekolah
+  /api/v1/sekolah/progress:
+    get:
+      consumes:
+      - application/json
+      description: Cek status pengajuan sekolah menggunakan tracking_code. Tidak perlu
+        autentikasi.
+      parameters:
+      - description: Tracking code dari response pengajuan
+        in: query
+        name: tracking_code
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SekolahProgressResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Track progress pengajuan sekolah (public, no auth)
+      tags:
+      - Sekolah
+  /api/v1/sekolah/saya:
+    get:
+      consumes:
+      - application/json
+      description: Admin Sekolah melihat data sekolahnya sendiri.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Sekolah'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get data sekolah milik admin yang login
+      tags:
+      - Sekolah
+    put:
+      consumes:
+      - application/json
+      description: Admin Sekolah update data dasar sekolah (alamat, telepon, website,
+        logo, koordinat).
+      parameters:
+      - description: Update request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.SekolahUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Sekolah'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update data sekolah milik admin yang login
+      tags:
+      - Sekolah
+  /api/v1/sekolah/saya/pengajuan-ulang:
+    post:
+      consumes:
+      - application/json
+      description: Admin Sekolah mengajukan ulang setelah status ditolak. Status kembali
+        ke pengajuan, dokumen harus diupload ulang.
+      parameters:
+      - description: Data sekolah baru
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.SekolahRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{id, tracking_code, status}'
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Pengajuan ulang setelah ditolak
+      tags:
+      - Sekolah
+  /auth/config:
+    get:
+      description: Returns public authentication configuration including Google Client
+        ID.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get public auth config
+      tags:
+      - Auth
+  /auth/google:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user using Google ID token. Returns session or pending
+        OAuth state.
+      parameters:
+      - description: Google ID token
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SessionResponse'
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/model.OAuthPendingResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Google OAuth login (legacy endpoint)
+      tags:
+      - Auth
+  /auth/internal/login:
+    post:
+      consumes:
+      - application/json
+      description: Login for internal users (staff, teachers, etc.).
+      parameters:
+      - description: Internal login request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.InternalLoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SessionResponse'
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/model.ForceUpdateResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Internal user login
+      tags:
+      - Internal Auth
+  /auth/internal/update-password:
+    put:
+      consumes:
+      - application/json
+      description: Update password for internal user on first login or forced reset.
+      parameters:
+      - description: Force update password request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.ForceUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SessionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Force update internal user password
+      tags:
+      - Internal Auth
+  /auth/logout:
+    post:
+      consumes:
+      - application/json
+      description: Revoke access token and refresh token to logout user.
+      parameters:
+      - description: Optional refresh token
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.RefreshRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Logout user
+      tags:
+      - Auth
+  /auth/me:
+    get:
+      description: Returns the currently authenticated user profile.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.User'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get current authenticated user
+      tags:
+      - Auth
+  /auth/oauth/complete:
+    post:
+      consumes:
+      - application/json
+      description: Complete OAuth registration by providing temp_user_id and WhatsApp
+        number.
+      parameters:
+      - description: Complete OAuth request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.CompleteOAuthRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SessionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Complete pending Google OAuth registration
+      tags:
+      - Auth
+  /auth/pusat/login:
+    post:
+      consumes:
+      - application/json
+      description: Login for super admin / pusat accounts.
+      parameters:
+      - description: Pusat login request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.PusatLoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SessionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Pusat (Super Admin) login
+      tags:
+      - Internal Auth
+  /auth/pusat/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new super admin account. Only accessible by existing
+        super_admin.
+      parameters:
+      - description: Register super admin request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.RegisterSuperAdminRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.SessionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Register new super admin
+      tags:
+      - Internal Auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Refresh access token using a valid refresh token.
+      parameters:
+      - description: Refresh token request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.RefreshRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SessionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Refresh access token
+      tags:
+      - Auth
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

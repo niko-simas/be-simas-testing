@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIMAS - Google Auth Test</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f0f2f5;
+        }
+
+        .card {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+            padding: 40px;
+            width: 400px;
+            max-width: 90vw;
+            text-align: center;
+        }
+
+        h1 { font-size: 24px; color: #1a1a2e; margin-bottom: 8px; }
+        p { color: #666; font-size: 14px; margin-bottom: 32px; }
+
+        .hidden { display: none !important; }
+
+        /* User info */
+        .user-info {
+            text-align: left;
+            margin-bottom: 24px;
+        }
+
+        .avatar-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .avatar {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .avatar-placeholder {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: #888;
+        }
+
+        .user-name { font-size: 18px; font-weight: 600; color: #1a1a2e; }
+        .user-email { font-size: 13px; color: #888; margin-top: 2px; }
+
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            margin-bottom: 24px;
+        }
+
+        .info-table th {
+            text-align: left;
+            padding: 6px 8px;
+            color: #888;
+            font-weight: 500;
+            border-bottom: 1px solid #eee;
+        }
+
+        .info-table td {
+            padding: 6px 8px;
+            color: #333;
+            border-bottom: 1px solid #eee;
+            word-break: break-all;
+        }
+
+        .token-preview {
+            background: #f8f8f8;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 8px;
+            font-size: 11px;
+            font-family: monospace;
+            color: #555;
+            max-height: 80px;
+            overflow: auto;
+            word-break: break-all;
+            margin-bottom: 24px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 8px;
+        }
+
+        .btn-logout {
+            background: #eee;
+            color: #333;
+        }
+
+        .btn-logout:hover { background: #ddd; }
+
+        .btn-api {
+            background: #1a1a2e;
+            color: #fff;
+        }
+
+        .btn-api:hover { background: #2d2d4a; }
+
+        .alert {
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            margin-bottom: 16px;
+            text-align: left;
+        }
+
+        .alert-error { background: #fee; color: #c00; }
+        .alert-success { background: #efe; color: #2a2; }
+        .alert-info { background: #eef; color: #44a; }
+
+        #google-btn-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 15px;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+        .input:focus { outline: none; border-color: #1a1a2e; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <!-- LOGGED OUT VIEW -->
+        <div id="login-view">
+            <h1>SIGN IN</h1>
+            <p>Login atau register dengan Google</p>
+
+            <div id="google-btn-container"></div>
+            <div id="gis-error" style="color:#c00;font-size:13px;margin-bottom:16px;display:none;">
+                Gagal load Google Sign-In. Pastikan koneksi internet dan origin sudah di-otorisasi.
+            </div>
+        </div>
+
+        <!-- WHATSAPP PENDING VIEW -->
+        <div id="whatsapp-view" class="hidden">
+            <h1>LENGKAPI PROFIL</h1>
+            <p>Untuk melanjutkan, masukkan nomor WhatsApp Anda</p>
+
+            <div class="user-info" style="margin-top:24px;">
+                <div class="avatar-row">
+                    <img id="pending-avatar" class="avatar hidden" src="" alt="avatar">
+                    <div id="pending-avatar-placeholder" class="avatar-placeholder">?</div>
+                    <div>
+                        <div class="user-name" id="pending-name">-</div>
+                        <div class="user-email" id="pending-email">-</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="wa-error" style="color:#c00;font-size:13px;margin-bottom:12px;display:none;"></div>
+
+            <input type="text" id="wa-input" class="input" placeholder="081234567890" maxlength="16">
+            <p style="font-size:12px;color:#888;margin-bottom:20px;">Contoh: 081234567890 atau +6281234567890</p>
+
+            <button class="btn btn-api" onclick="submitWhatsApp()">Simpan &amp; Lanjutkan</button>
+            <button class="btn btn-logout" onclick="cancelWhatsApp()">Batal</button>
+        </div>
+        <div id="dashboard-view" class="hidden">
+            <h1>DASHBOARD</h1>
+            <p id="is-new-badge"></p>
+
+            <div class="user-info">
+                <div class="avatar-row">
+                    <img id="user-avatar" class="avatar hidden" src="" alt="avatar">
+                    <div id="avatar-placeholder" class="avatar-placeholder">?</div>
+                    <div>
+                        <div class="user-name" id="user-name">-</div>
+                        <div class="user-email" id="user-email">-</div>
+                    </div>
+                </div>
+
+                <table class="info-table">
+                    <tr><th>User ID</th><td id="info-id">-</td></tr>
+                    <tr><th>Provider</th><td id="info-provider">-</td></tr>
+                    <tr><th>Email Verified</th><td id="info-verified">-</td></tr>
+                    <tr><th>Created</th><td id="info-created">-</td></tr>
+                </table>
+
+                <div style="font-size:12px;color:#888;margin-bottom:4px;">Access Token (JWT)</div>
+                <div class="token-preview" id="token-preview">-</div>
+
+                <div style="font-size:12px;color:#888;margin-bottom:4px;">Refresh Token</div>
+                <div class="token-preview" id="refresh-preview">-</div>
+
+                <div style="font-size:12px;color:#888;margin-bottom:4px;">Expires In</div>
+                <div class="token-preview" id="expires-preview">-</div>
+            </div>
+
+            <div id="api-result" class="hidden"></div>
+
+            <button class="btn btn-api" onclick="testMeEndpoint()">Test GET /auth/me</button>
+            <button class="btn btn-api" onclick="testRefresh()">Test POST /auth/refresh</button>
+            <button class="btn btn-logout" onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <!-- Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+    <script>
+    // ============================================
+    // CONFIG
+    // ============================================
+    const API_BASE = 'http://localhost:8080';
+    let GIS_CLIENT_ID = null;
+
+    // State
+    let currentToken = null;
+    let currentUser = null;
+
+    // ============================================
+    // GOOGLE SIGN-IN INITIALIZATION
+    // ============================================
+    function initGoogleSignIn() {
+        google.accounts.id.initialize({
+            client_id: GIS_CLIENT_ID,
+            callback: handleCredentialResponse,
+            auto_select: false,
+        });
+
+        const container = document.getElementById('google-btn-container');
+        google.accounts.id.renderButton(container, {
+            theme: 'outline',
+            size: 'large',
+            text: 'signin_with',
+            shape: 'rectangular',
+            width: 300,
+        });
+    }
+
+    // ============================================
+    // GOOGLE SIGN-IN CALLBACK
+    // ============================================
+    function handleCredentialResponse(response) {
+        const idToken = response.credential;
+        loginWithGoogle(idToken);
+    }
+
+    // ============================================
+    // LOGIN / REGISTER VIA BACKEND
+    // ============================================
+    let currentRefreshToken = null;
+    let pendingTempUserID = null;
+
+    async function safeJson(res) {
+        const text = await res.text();
+        try { return JSON.parse(text); } catch (_) { return { raw: text }; }
+    }
+
+    async function loginWithGoogle(idToken) {
+        try {
+            const res = await fetch(`${API_BASE}/auth/google`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id_token: idToken })
+            });
+
+            const data = await safeJson(res);
+
+            if (res.status === 202 && data.account_state === 'require_whatsapp') {
+                pendingTempUserID = data.temp_user_id;
+                showWhatsAppView(data);
+                return;
+            }
+
+            if (!res.ok) {
+                showError(`Error ${res.status}: ${JSON.stringify(data)}`);
+                return;
+            }
+
+            currentToken = data.access_token;
+            currentRefreshToken = data.refresh_token;
+            currentUser = data.user || { name: data.name, email: data.email };
+
+            showDashboard(data);
+        } catch (err) {
+            showError(`Tidak dapat terhubung ke backend.\nPastikan server berjalan di port 8080.\n\nError: ${err.message}`);
+        }
+    }
+
+    // ============================================
+    // WHATSAPP VIEW
+    // ============================================
+    function showWhatsAppView(data) {
+        document.getElementById('login-view').classList.add('hidden');
+        document.getElementById('dashboard-view').classList.add('hidden');
+        document.getElementById('whatsapp-view').classList.remove('hidden');
+
+        document.getElementById('pending-name').textContent = data.name || '—';
+        document.getElementById('pending-email').textContent = data.email || '—';
+
+        if (data.avatar_url) {
+            document.getElementById('pending-avatar').src = data.avatar_url;
+            document.getElementById('pending-avatar').classList.remove('hidden');
+            document.getElementById('pending-avatar-placeholder').classList.add('hidden');
+        }
+
+        document.getElementById('wa-error').style.display = 'none';
+        document.getElementById('wa-input').value = '';
+    }
+
+    async function submitWhatsApp() {
+        const wa = document.getElementById('wa-input').value.trim();
+        const errEl = document.getElementById('wa-error');
+
+        if (!wa) {
+            errEl.textContent = 'Nomor WhatsApp wajib diisi';
+            errEl.style.display = 'block';
+            return;
+        }
+
+        try {
+            const res = await fetch(`${API_BASE}/auth/oauth/complete`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ temp_user_id: pendingTempUserID, no_whatsapp: wa })
+            });
+
+            const data = await safeJson(res);
+
+            if (!res.ok) {
+                errEl.textContent = `Error ${res.status}: ${JSON.stringify(data)}`;
+                errEl.style.display = 'block';
+                return;
+            }
+
+            pendingTempUserID = null;
+            currentToken = data.access_token;
+            currentRefreshToken = data.refresh_token;
+            currentUser = data.user || { name: data.name, email: data.email };
+
+            showDashboard(data);
+        } catch (err) {
+            errEl.textContent = `Error: ${err.message}`;
+            errEl.style.display = 'block';
+        }
+    }
+
+    function cancelWhatsApp() {
+        pendingTempUserID = null;
+        document.getElementById('whatsapp-view').classList.add('hidden');
+        document.getElementById('login-view').classList.remove('hidden');
+        if (window.google && google.accounts && google.accounts.id) {
+            google.accounts.id.disableAutoSelect();
+        }
+    }
+
+    // ============================================
+    // UI HELPERS
+    // ============================================
+    function showDashboard(data) {
+        document.getElementById('login-view').classList.add('hidden');
+        document.getElementById('whatsapp-view').classList.add('hidden');
+        document.getElementById('dashboard-view').classList.remove('hidden');
+
+        const user = data.user || currentUser;
+        document.getElementById('user-name').textContent = user.name || '—';
+        document.getElementById('user-email').textContent = user.email || '—';
+
+        if (user.avatar_url) {
+            document.getElementById('user-avatar').src = user.avatar_url;
+            document.getElementById('user-avatar').classList.remove('hidden');
+            document.getElementById('avatar-placeholder').classList.add('hidden');
+        }
+
+        document.getElementById('is-new-badge').textContent =
+            (data.account_status === 'active') ? '🔑 Login berhasil' : '✅ Akun baru — register berhasil!';
+        document.getElementById('info-id').textContent = user.id || '—';
+        document.getElementById('info-provider').textContent = user.provider || 'google';
+        document.getElementById('info-verified').textContent = user.email_verified ? 'Ya' : 'Tidak';
+        document.getElementById('info-created').textContent = user.created_at
+            ? new Date(user.created_at).toLocaleString()
+            : '—';
+
+        document.getElementById('token-preview').textContent = currentToken || data.access_token;
+        document.getElementById('refresh-preview').textContent = data.refresh_token || '—';
+        document.getElementById('expires-preview').textContent = data.expires_in ? `${data.expires_in} detik` : '—';
+        hideAlert();
+    }
+
+    function showError(msg) {
+        const existing = document.getElementById('error-alert');
+        if (existing) existing.remove();
+
+        const div = document.createElement('div');
+        div.id = 'error-alert';
+        div.className = 'alert alert-error';
+        div.style.whiteSpace = 'pre-wrap';
+        div.textContent = msg;
+
+        const target = document.getElementById('login-view');
+        target.parentNode.insertBefore(div, target.nextSibling);
+    }
+
+    function showApiAlert(type, msg) {
+        const existing = document.getElementById('api-alert');
+        if (existing) existing.remove();
+
+        const div = document.createElement('div');
+        div.id = 'api-alert';
+        div.className = `alert alert-${type}`;
+        div.style.whiteSpace = 'pre-wrap';
+        div.textContent = msg;
+
+        const target = document.getElementById('api-result');
+        target.classList.remove('hidden');
+        target.innerHTML = '';
+        target.appendChild(div);
+    }
+
+    function hideAlert() {
+        const e = document.getElementById('error-alert');
+        if (e) e.remove();
+    }
+
+    // ============================================
+    // TEST ENDPOINTS
+    // ============================================
+    async function testMeEndpoint() {
+        if (!currentToken) {
+            showApiAlert('error', 'Belum login');
+            return;
+        }
+
+        try {
+            const res = await fetch(`${API_BASE}/auth/me`, {
+                headers: { 'Authorization': `Bearer ${currentToken}` }
+            });
+            const data = await res.json();
+            showApiAlert(res.ok ? 'success' : 'error',
+                `${res.status} ${res.statusText}\n\n${JSON.stringify(data, null, 2)}`);
+        } catch (err) {
+            showApiAlert('error', `Error: ${err.message}`);
+        }
+    }
+
+    async function testRefresh() {
+        if (!currentRefreshToken) {
+            showApiAlert('error', 'Belum ada refresh token');
+            return;
+        }
+        try {
+            const res = await fetch(`${API_BASE}/auth/refresh`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ refresh_token: currentRefreshToken })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                currentToken = data.access_token;
+                currentRefreshToken = data.refresh_token;
+                document.getElementById('token-preview').textContent = currentToken;
+                document.getElementById('refresh-preview').textContent = currentRefreshToken;
+                document.getElementById('expires-preview').textContent = data.expires_in + ' detik';
+            }
+            showApiAlert(res.ok ? 'success' : 'error',
+                `${res.status} ${res.statusText}\n\n${JSON.stringify(data, null, 2)}`);
+        } catch (err) {
+            showApiAlert('error', `Error: ${err.message}`);
+        }
+    }
+
+    async function logout() {
+        if (currentToken) {
+            try {
+                await fetch(`${API_BASE}/auth/logout`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${currentToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ refresh_token: currentRefreshToken || '' })
+                });
+            } catch (_) {}
+        }
+        currentToken = null;
+        currentRefreshToken = null;
+        currentUser = null;
+
+        document.getElementById('dashboard-view').classList.add('hidden');
+        document.getElementById('login-view').classList.remove('hidden');
+        document.getElementById('api-result').classList.add('hidden');
+
+        document.getElementById('user-avatar').classList.add('hidden');
+        document.getElementById('avatar-placeholder').classList.remove('hidden');
+        document.getElementById('user-avatar').src = '';
+        document.getElementById('token-preview').textContent = '-';
+        document.getElementById('refresh-preview').textContent = '-';
+        document.getElementById('expires-preview').textContent = '-';
+
+        if (window.google && google.accounts && google.accounts.id) {
+            google.accounts.id.disableAutoSelect();
+        }
+    }
+
+    // ============================================
+    // INIT — fetch config then init GIS
+    // ============================================
+    async function init() {
+        try {
+            const res = await fetch(`${API_BASE}/auth/config`);
+            const data = await res.json();
+            GIS_CLIENT_ID = data.google_client_id;
+
+            if (!GIS_CLIENT_ID) {
+                document.getElementById('gis-error').textContent =
+                    'Google Client ID belum diset di .env / environment.';
+                document.getElementById('gis-error').style.display = 'block';
+                return;
+            }
+
+            initGoogleSignIn();
+        } catch (err) {
+            document.getElementById('gis-error').textContent =
+                `Tidak dapat mengambil config dari backend.\nPastikan server berjalan di port 8080.\n\nError: ${err.message}`;
+            document.getElementById('gis-error').style.display = 'block';
+        }
+    }
+
+    function waitForGIS(callback, attempts) {
+        if (attempts === undefined) attempts = 0;
+        if (attempts > 20) {
+            document.getElementById('gis-error').style.display = 'block';
+            return;
+        }
+        if (window.google && google.accounts && google.accounts.id) {
+            callback();
+        } else {
+            setTimeout(() => waitForGIS(callback, attempts + 1), 100);
+        }
+    }
+
+    waitForGIS(init);
+    </script>
+</body>
+</html>
