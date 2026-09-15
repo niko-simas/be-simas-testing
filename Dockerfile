@@ -14,7 +14,6 @@ RUN go mod download
 COPY . .
 
 # Build the binary
-# Adjust the path if your main.go is not in ./cmd/api
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/api
 
 # Runtime stage
