@@ -19,14 +19,14 @@
 
 ## 1. Ringkasan Sistem
 
-SIMAS (Sistem Informasi Manajemen Sekolah) menyediakan alur **2-step registration** untuk sekolah baru:
+SIMAS (Sistem Informasi Manajemen Sekolah) menyediakan alur **single-step registration** untuk sekolah baru. Data sekolah dan 4 dokumen legalitas dikirim sekaligus dalam satu request `multipart/form-data`.
 
-| Tahap | Aksi User | Endpoint | Auth |
-|-------|-----------|----------|------|
-| **Step 1** | Isi data sekolah (JSON) | `POST /api/v1/sekolah` | ❌ Public |
-| **Step 2** | Upload 4 dokumen legalitas (multipart/form-data) | `POST /api/v1/sekolah/{id}/dokumen` | ❌ Public |
-| **Step 3** | Super Admin verifikasi (Setuju / Tolak) | `PUT /api/v1/sekolah/{id}/verifikasi` | ✅ Bearer (super_admin) |
-| **Tracking** | Cek progress kapan saja | `GET /api/v1/sekolah/progress?tracking_code=...` | ❌ Public |
+| Tahap | Aksi User | Endpoint | Auth | Role |
+|-------|-----------|----------|------|------|
+| **Registrasi** | Isi data sekolah + upload 4 dokumen legalitas | `POST /api/v1/sekolah/lengkap` | No Auth | — |
+| **Tracking** | Cek progress kapan saja | `GET /api/v1/sekolah/progress?tracking_code=...` | No Auth | — |
+| **Verifikasi** | Super Admin verifikasi (Setuju / Tolak) | `PUT /api/v1/sekolah/{id}/verifikasi` | Bearer | `super_admin` |
+| **Pengajuan Ulang** | Admin Sekolah ajukan ulang setelah ditolak | `POST /api/v1/sekolah/saya/pengajuan-ulang` | Bearer | `admin_sekolah` |
 
 Setelah pengajuan **diterima** (status = `aktif`), sistem secara otomatis:
 1. Membuat akun `admin_sekolah`
@@ -38,121 +38,106 @@ Setelah pengajuan **diterima** (status = `aktif`), sistem secara otomatis:
 ## 2. State Machine Status Sekolah
 
 ```
-┌─────────────┐     upload dokumen      ┌─────────────────────┐
-│  pengajuan  │ ──────────────────────▶ │ menunggu_verifikasi │
-└─────────────┘                         └─────────────────────┘
-                                               │
-                                               │ Super Admin verifikasi
-                          ┌────────────────────┼────────────────────┐
-                          │ Setuju (aktif)     │                    │ Tolak (ditolak)
-                          ▼                    │                    ▼
-                   ┌─────────────┐             │            ┌─────────────┐
-                   │    aktif    │             │            │   ditolak   │
-                   └─────────────┘             │            └─────────────┘
-                          │                    │                    │
-                          │ nonaktif           │                    │ pengajuan ulang
-                          ▼                    │                    ▼
-                   ┌─────────────┐             │            ┌─────────────┐
-                   │  nonaktif   │ ────────────┘            │  pengajuan  │
-                   └─────────────┘                          └─────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│  PUBLIK — Registrasi Sekolah Baru                            │
+│  POST /api/v1/sekolah/lengkap (multipart/form-data)          │
+│  Data + 4 dokumen sekaligus                                  │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│  status: "menunggu_verifikasi"                               │
+│  Label: "Menunggu Verifikasi Admin"                          │
+│  Email notifikasi ke Super Admin                             │
+└─────────────────────────────────────────────────────────────┘
+                              │
+          ┌───────────────────┼───────────────────┐
+          │ Super Admin verifikasi                │
+          ▼                                       ▼
+┌─────────────────────┐                 ┌─────────────────────┐
+│  Setuju → aktif      │                 │  Tolak → ditolak     │
+│  - Auto create       │                 │  - Email alasan      │
+│    admin_sekolah     │                 │    dikirim           │
+│  - Email kredensial  │                 │  - Bisa pengajuan    │
+│    dikirim           │                 │    ulang             │
+└─────────────────────┘                 └─────────────────────┘
+          │                                       │
+          ▼                                       ▼
+┌─────────────────────┐                 ┌─────────────────────┐
+│  status: nonaktif    │◄────────────────┤  status: pengajuan   │
+│  (opsional)          │   aktivasi ulang  │  (pengajuan ulang)   │
+└─────────────────────┘                 └─────────────────────┘
 ```
 
 | Status | Label | Keterangan |
 |--------|-------|------------|
-| `pengajuan` | Pengajuan Diterima | Data sekolah sudah tersimpan, menunggu upload dokumen |
-| `menunggu_verifikasi` | Menunggu Verifikasi Admin | 4 dokumen legalitas sudah diupload, menunggu review Super Admin |
-| `aktif` | Aktif | Pengajuan **diterima**. Akun admin_sekolah dibuat & kredensial dikirim via email |
-| `ditolak` | Ditolak | Pengajuan **ditolak**. Admin dapat mengajukan ulang. |
+| `menunggu_verifikasi` | Menunggu Verifikasi Admin | Data + 4 dokumen legalitas sudah lengkap, menunggu review Super Admin |
+| `aktif` | Aktif | Pengajuan **diterima**. Akun `admin_sekolah` dibuat & kredensial dikirim via email |
+| `ditolak` | Ditolak | Pengajuan **ditolak**. `admin_sekolah` dapat mengajukan ulang. |
 | `nonaktif` | Nonaktif | Sekolah yang sudah aktif dinonaktifkan (jarang digunakan) |
+| `pengajuan` | Pengajuan Diterima | Status sementara saat pengajuan ulang (setelah ditolak), menunggu upload dokumen ulang |
 
 ---
 
 ## 3. Alur Registrasi Sekolah (End-to-End)
 
-### Step 1 — Pengisian Data Sekolah
+### Step 1 — Registrasi Sekolah (Data + Dokumen Sekaligus)
 
-User mengisi form data sekolah di halaman awal registrasi.
+User mengisi form data sekolah dan upload 4 dokumen legalitas dalam satu halaman/form.
 
-**Endpoint:** `POST /api/v1/sekolah`
-**Content-Type:** `application/json`
+**Endpoint:** `POST /api/v1/sekolah/lengkap`
+**Content-Type:** `multipart/form-data`
 **Auth:** Tidak diperlukan
 
-**Request Body:**
-```json
-{
-  "nama": "SMA Negeri 1 Jakarta",
-  "npsn": "20123456",
-  "jenjang": "sma_smk_ma_mak",
-  "alamat": "Jl. Sudirman No. 1",
-  "provinsi_id": 31,
-  "kabupaten_id": 3173,
-  "kecamatan_id": 3173010,
-  "desa_id": 3173010001,
-  "kode_pos": "10210",
-  "latitude": -6.2088,
-  "longitude": 106.8456,
-  "email": "sman1jakarta@example.com",
-  "telepon": "021-1234567",
-  "website": "https://sman1jakarta.sch.id",
-  "yayasan": "Yayasan Pendidikan Jakarta",
-  "kepala_sekolah_nama": "Dr. Budi Santoso, M.Pd.",
-  "kepala_sekolah_nip": "196512311990011001",
-  "tanggal_berdiri": "1980-07-01",
-  "sk_pendirian": "SK.123/1980"
-}
-```
+**Form Data Fields:**
+
+| Field | Type | Deskripsi | Wajib |
+|-------|------|-----------|-------|
+| `nama` | string | Nama sekolah | Ya |
+| `jenjang` | string | Jenjang pendidikan (`sd_mi`, `smp_mts`, `sma_smk_ma_mak`) | Ya |
+| `email` | string | Email sekolah (unik) | Ya |
+| `npsn` | string | Nomor Pokok Sekolah Nasional (unik, opsional) | Tidak |
+| `alamat` | string | Alamat lengkap sekolah | Tidak |
+| `provinsi_id` | integer | ID provinsi | Tidak |
+| `kabupaten_id` | integer | ID kabupaten/kota | Tidak |
+| `kecamatan_id` | integer | ID kecamatan | Tidak |
+| `desa_id` | integer | ID desa/kelurahan | Tidak |
+| `kode_pos` | string | Kode pos | Tidak |
+| `latitude` | number | Koordinat latitude | Tidak |
+| `longitude` | number | Koordinat longitude | Tidak |
+| `telepon` | string | Nomor telepon sekolah | Tidak |
+| `website` | string | Website sekolah | Tidak |
+| `yayasan` | string | Nama yayasan | Tidak |
+| `kepala_sekolah_nama` | string | Nama kepala sekolah | Tidak |
+| `kepala_sekolah_nip` | string | NIP kepala sekolah | Tidak |
+| `tanggal_berdiri` | string | Tanggal berdiri (`YYYY-MM-DD`) | Tidak |
+| `sk_pendirian` | string | Nomor SK pendirian | Tidak |
+| `akta_pendirian` | file | Akta Pendirian Yayasan/Badan Hukum (PDF, max 3MB) | Ya |
+| `nib` | file | Nomor Induk Berusaha (PDF, max 3MB) | Ya |
+| `sk_pendirian` | file | SK Pendirian Sekolah (PDF, max 3MB) | Ya |
+| `siop` | file | Surat Izin Operasional (PDF, max 3MB) | Ya |
 
 **Response 201 Created:**
 ```json
 {
   "id": "550e8400-e29b-41d4-a716-446655440000",
   "tracking_code": "SMAB3C9D2E1",
-  "status": "pengajuan",
-  "status_label": "Pengajuan Diterima",
-  "message": "Simpan tracking_code untuk melihat progress pengajuan. Silakan upload dokumen legalitas di endpoint /sekolah/{id}/dokumen"
-}
-```
-
-> ⚠️ **PENTING:** Simpan `tracking_code` untuk tracking progress. Tidak ada autentikasi untuk tracking.
-
----
-
-### Step 2 — Upload Dokumen Legalitas
-
-User melanjutkan ke halaman berikutnya untuk upload 4 dokumen wajib.
-
-**Endpoint:** `POST /api/v1/sekolah/{sekolah_id}/dokumen`
-**Content-Type:** `multipart/form-data`
-**Auth:** Tidak diperlukan
-
-**Form Fields:**
-
-| Field | Type | Deskripsi | Wajib |
-|-------|------|-----------|-------|
-| `akta_pendirian` | file | Akta Pendirian Yayasan/Badan Hukum (PDF) | ✅ |
-| `nib` | file | Nomor Induk Berusaha (PDF) | ✅ |
-| `sk_pendirian` | file | SK Pendirian Sekolah (PDF) | ✅ |
-| `siop` | file | Surat Izin Operasional (PDF) | ✅ |
-
-**Response 200 OK:**
-```json
-{
-  "id": "550e8400-e29b-41d4-a716-446655440000",
-  "tracking_code": "SMAB3C9D2E1",
   "status": "menunggu_verifikasi",
   "status_label": "Menunggu Verifikasi Admin",
-  "message": "Dokumen berhasil diupload. Pengajuan sedang diverifikasi oleh admin SIMAS."
+  "message": "Pengajuan berhasil. Sekolah menunggu verifikasi admin."
 }
 ```
 
-Setelah upload berhasil:
-- Status otomatis berubah dari `pengajuan` → `menunggu_verifikasi`
+**PENTING:** Simpan `tracking_code` untuk tracking progress. Tidak ada autentikasi untuk tracking.
+
+Setelah registrasi berhasil:
+- Status langsung `menunggu_verifikasi`
 - Email notifikasi dikirim ke semua Super Admin
 - State log tercatat otomatis
 
 ---
 
-### Step 3 — Tracking Progress (Public)
+### Step 2 — Tracking Progress (Public)
 
 User dapat mengecek status pengajuan kapan saja menggunakan `tracking_code`.
 
@@ -168,19 +153,13 @@ User dapat mengecek status pengajuan kapan saja menggunakan `tracking_code`.
   "status_label": "Menunggu Verifikasi Admin",
   "email": "sman1jakarta@example.com",
   "created_at": "2024-01-15T08:30:00Z",
-  "updated_at": "2024-01-15T09:15:00Z",
+  "updated_at": "2024-01-15T08:30:00Z",
   "state_logs": [
-    {
-      "status_baru": "pengajuan",
-      "status_label": "Pengajuan Diterima",
-      "catatan": null,
-      "created_at": "2024-01-15T08:30:00Z"
-    },
     {
       "status_baru": "menunggu_verifikasi",
       "status_label": "Menunggu Verifikasi Admin",
       "catatan": "Dokumen legalitas telah diupload",
-      "created_at": "2024-01-15T09:15:00Z"
+      "created_at": "2024-01-15T08:30:00Z"
     }
   ]
 }
@@ -188,7 +167,7 @@ User dapat mengecek status pengajuan kapan saja menggunakan `tracking_code`.
 
 ---
 
-### Step 4 — Verifikasi oleh Super Admin
+### Step 3 — Verifikasi oleh Super Admin
 
 Super Admin login, melihat list sekolah yang menunggu verifikasi, dan memutuskan.
 
@@ -225,11 +204,11 @@ Super Admin login, melihat list sekolah yang menunggu verifikasi, dan memutuskan
 **Yang terjadi setelah ditolak:**
 1. Status berubah ke `ditolak`
 2. Email penolakan dikirim ke sekolah berisi alasan
-3. Sekolah dapat mengajukan ulang nanti
+3. Sekolah dapat mengajukan ulang nanti oleh `admin_sekolah`
 
 ---
 
-### Step 5 — Pengajuan Ulang (Jika Ditolak)
+### Step 4 — Pengajuan Ulang (Jika Ditolak)
 
 Admin Sekolah login, melihat sekolahnya ditolak, dan mengajukan ulang.
 
@@ -242,8 +221,7 @@ Admin Sekolah login, melihat sekolahnya ditolak, dan mengajukan ulang.
   "nama": "SMA Negeri 1 Jakarta (Revisi)",
   "npsn": "20123457",
   "jenjang": "sma_smk_ma_mak",
-  "email": "sman1jakarta@example.com",
-  ...
+  "email": "sman1jakarta@example.com"
 }
 ```
 
@@ -254,7 +232,7 @@ Admin Sekolah login, melihat sekolahnya ditolak, dan mengajukan ulang.
 
 ---
 
-### Step 6 — Sekolah Aktif (Operational)
+### Step 5 — Sekolah Aktif (Operational)
 
 Setelah status `aktif`, admin sekolah dapat:
 
@@ -273,20 +251,34 @@ Setelah status `aktif`, admin sekolah dapat:
 |--------|--------|
 | **Format** | PDF only (header file harus diawali `%PDF`) |
 | **Ukuran Maksimal** | 3 MB per file (`3 * 1024 * 1024` bytes) |
-| **Jumlah File** | 4 file wajib (akta_pendirian, nib, sk_pendirian, siop) |
+| **Jumlah File** | 4 file wajib (`akta_pendirian`, `nib`, `sk_pendirian`, `siop`) |
 | **Body Type** | `multipart/form-data` |
 | **Storage** | Upload langsung ke S3/MinIO via backend |
 
-### Cara Upload di Postman
+### Cara Upload di Postman / cURL
 
+**Postman:**
 1. Pilih method `POST`
-2. Pilih tab **Body** → pilih **form-data**
-3. Tambahkan 4 key dengan **type = File**:
-   - `akta_pendirian` → pilih file PDF
-   - `nib` → pilih file PDF
-   - `sk_pendirian` → pilih file PDF
-   - `siop` → pilih file PDF
-4. Tidak perlu set `Content-Type` header secara manual — Postman akan otomatis set `multipart/form-data` dengan boundary
+2. Pilih tab **Body** -> pilih **form-data**
+3. Tambahkan key untuk data (type = Text): `nama`, `jenjang`, `email`, `alamat`, ...
+4. Tambahkan key untuk file (type = File):
+   - `akta_pendirian` -> pilih file PDF
+   - `nib` -> pilih file PDF
+   - `sk_pendirian` -> pilih file PDF
+   - `siop` -> pilih file PDF
+5. Tidak perlu set `Content-Type` header secara manual — Postman akan otomatis set `multipart/form-data` dengan boundary
+
+**cURL:**
+```bash
+curl -X POST http://localhost:8080/api/v1/sekolah/lengkap \
+  -F "nama=SMA Negeri 1 Jakarta" \
+  -F "jenjang=sma_smk_ma_mak" \
+  -F "email=sman1jakarta@example.com" \
+  -F "akta_pendirian=@/path/to/akta.pdf" \
+  -F "nib=@/path/to/nib.pdf" \
+  -F "sk_pendirian=@/path/to/sk.pdf" \
+  -F "siop=@/path/to/siop.pdf"
+```
 
 ### Error Upload
 
@@ -304,12 +296,11 @@ Setelah status `aktif`, admin sekolah dapat:
 
 | Method | Endpoint | Deskripsi |
 |--------|----------|-----------|
-| `POST` | `/api/v1/sekolah` | Step 1: Pengajuan baru sekolah (data JSON) |
-| `POST` | `/api/v1/sekolah/{id}/dokumen` | Step 2: Upload dokumen legalitas (multipart) |
+| `POST` | `/api/v1/sekolah/lengkap` | Registrasi sekolah baru: data + 4 dokumen legalitas sekaligus (multipart/form-data) |
 | `GET` | `/api/v1/sekolah/progress?tracking_code=` | Tracking status pengajuan |
 | `GET` | `/api/v1/sekolah/jenjang` | List master data jenjang pendidikan |
 
-### Super Admin Endpoints (Bearer + role: super_admin)
+### Super Admin Endpoints (Bearer + role: `super_admin`)
 
 | Method | Endpoint | Deskripsi |
 |--------|----------|-----------|
@@ -318,23 +309,42 @@ Setelah status `aktif`, admin sekolah dapat:
 | `GET` | `/api/v1/sekolah/{id}/dokumen-legalitas` | Generate presigned URL untuk preview/download dokumen |
 | `PUT` | `/api/v1/sekolah/{id}/verifikasi` | Setuju / Tolak pengajuan sekolah |
 | `PUT` | `/api/v1/sekolah/{id}` | Update data sekolah |
+| `POST` | `/auth/pusat/register` | Register Super Admin baru |
 
-### Admin Sekolah Endpoints (Bearer + role: admin_sekolah)
+### Admin Sekolah Endpoints (Bearer + role: `admin_sekolah`)
 
 | Method | Endpoint | Deskripsi |
 |--------|----------|-----------|
 | `GET` | `/api/v1/sekolah/saya` | Lihat data sekolah sendiri |
 | `PUT` | `/api/v1/sekolah/saya` | Update data dasar sekolah |
 | `POST` | `/api/v1/sekolah/saya/pengajuan-ulang` | Ajukan ulang setelah ditolak |
+| `POST` | `/api/v1/sekolah/saya/pendidik` | Tambah tenaga pendidik |
+| `GET` | `/api/v1/sekolah/saya/pendidik` | List tenaga pendidik |
+| `GET` | `/api/v1/sekolah/saya/pendidik/{id}` | Detail tenaga pendidik |
+| `PUT` | `/api/v1/sekolah/saya/pendidik/{id}` | Update data tenaga pendidik |
+| `PUT` | `/api/v1/sekolah/saya/pendidik/{id}/status` | Update status tenaga pendidik (aktif/nonaktif) |
+| `POST` | `/api/v1/sekolah/saya/pendidik/{id}/jadwal` | Tambah jadwal mengajar |
+| `GET` | `/api/v1/sekolah/saya/pendidik/{id}/jadwal` | List jadwal mengajar pendidik |
+| `PUT` | `/api/v1/sekolah/saya/pendidik/{id}/jadwal/{jadwal_id}` | Update jadwal mengajar |
+| `DELETE` | `/api/v1/sekolah/saya/pendidik/{id}/jadwal/{jadwal_id}` | Hapus jadwal mengajar |
 
-### Internal Auth Endpoints
+### Tenaga Pendidik Endpoints (Bearer + role: `tenaga_pendidik`)
+
+| Method | Endpoint | Deskripsi |
+|--------|----------|-----------|
+| `GET` | `/api/v1/pendidik/saya` | Lihat profile sendiri |
+| `PUT` | `/api/v1/pendidik/saya` | Update profile sendiri |
+| `GET` | `/api/v1/pendidik/saya/jadwal` | Lihat jadwal harian |
+| `GET` | `/api/v1/pendidik/saya/jadwal/minggu-ini` | Lihat jadwal minggu ini |
+
+### Internal Auth Endpoints (No Auth / Temp Token)
 
 | Method | Endpoint | Deskripsi | Auth |
 |--------|----------|-----------|------|
-| `POST` | `/auth/pusat/login` | Login Super Admin | ❌ |
-| `POST` | `/auth/pusat/register` | Register Super Admin baru | ✅ super_admin |
-| `POST` | `/auth/internal/login` | Login Admin Sekolah / Pendidik | ❌ |
-| `PUT` | `/auth/internal/update-password` | Force update password (first login) | ✅ temp_token |
+| `POST` | `/auth/pusat/login` | Login Super Admin | No |
+| `POST` | `/auth/pusat/register` | Register Super Admin baru | `super_admin` |
+| `POST` | `/auth/internal/login` | Login Admin Sekolah / Pendidik | No |
+| `PUT` | `/auth/internal/update-password` | Force update password (first login) | `temp_token` |
 
 ### Mobile Auth Endpoints (Wali Murid)
 
@@ -347,6 +357,19 @@ Setelah status `aktif`, admin sekolah dapat:
 | `POST` | `/api/v1/auth/mobile/oauth` | Google OAuth login |
 | `POST` | `/api/v1/auth/mobile/oauth/complete` | Lengkapi data setelah OAuth (WhatsApp) |
 
+### Wali Murid Endpoints (Bearer + role: `wali_murid`)
+
+| Method | Endpoint | Deskripsi |
+|--------|----------|-----------|
+| `GET` | `/api/v1/mobile/status-verifikasi` | Cek status verifikasi akun wali murid |
+
+### Utility Endpoints
+
+| Method | Endpoint | Deskripsi |
+|--------|----------|-----------|
+| `GET` | `/health` | Health check server |
+| `GET` | `/swagger/*` | Swagger UI documentation |
+
 ---
 
 ## 6. Autentikasi & Otorisasi
@@ -355,18 +378,18 @@ Setelah status `aktif`, admin sekolah dapat:
 
 | Role | Akses |
 |------|-------|
-| `super_admin` | Full access: verifikasi sekolah, register admin baru, lihat semua data |
-| `admin_sekolah` | Kelola sekolah sendiri + kelola pendidik + jadwal |
+| `super_admin` | Full access: verifikasi sekolah, register admin baru, lihat semua data, kelola sekolah & pendidik |
+| `admin_sekolah` | Kelola sekolah sendiri + kelola pendidik + jadwal + pengajuan ulang |
 | `tenaga_pendidik` | Lihat profile sendiri + jadwal mengajar |
 | `wali_murid` | Mobile app: status verifikasi, data anak |
 
 ### Token Flow
 
 ```
-1. Login → dapat access_token (15 menit) + refresh_token (7 hari)
+1. Login -> dapat access_token (15 menit) + refresh_token (7 hari)
 2. Kirim access_token di header: Authorization: Bearer {token}
-3. Jika access_token expired → refresh via POST /api/v1/auth/refresh
-4. Jika refresh_token invalid/expired → login ulang
+3. Jika access_token expired -> refresh via POST /api/v1/auth/refresh
+4. Jika refresh_token invalid/expired -> login ulang
 ```
 
 ### Force Update Password (Internal Auth)
@@ -374,9 +397,9 @@ Setelah status `aktif`, admin sekolah dapat:
 Karyawan/admin sekolah yang baru dibuat oleh Super Admin **wajib** mengganti password saat pertama kali login:
 
 ```
-1. POST /auth/internal/login → Response 403 + force_update: true + temp_token
-2. PUT /auth/internal/update-password (pakai temp_token) → Response 200 + token baru
-3. Login ulang dengan password baru → Response 200 + token normal
+1. POST /auth/internal/login -> Response 403 + force_update: true + temp_token
+2. PUT /auth/internal/update-password (pakai temp_token) -> Response 200 + token baru
+3. Login ulang dengan password baru -> Response 200 + token normal
 ```
 
 ---
@@ -389,65 +412,65 @@ File: `postman/simas-full-collection.json`
 
 ```
 SIMAS — Full API Collection
-├── MOBILE AUTH (9 requests)
-│   ├── 1. Register
-│   ├── 2. Verify OTP
-│   ├── 3. Resend OTP
-│   ├── 4. Login Setelah Verifikasi
-│   ├── 5. Refresh Token
-│   ├── 6. Logout
-│   ├── 7. Status Verifikasi
-│   ├── 8. Google OAuth
-│   └── 9. Complete OAuth (WA)
-│
-├── INTERNAL AUTH (8 requests)
-│   ├── 0. Register Super Admin (Protected)
-│   ├── 1. Super Admin Login (Normal)
-│   ├── 2. /auth/me dengan Access Token
-│   ├── 3. Refresh Token
-│   ├── 4. Logout
-│   ├── 5. Internal Login — Admin Sekolah (Force Update)
-│   ├── 6. Force Update — Berhasil
-│   └── 7. Internal Login Setelah Force Update (Normal)
-│
-├── UTILITY (1 request)
-│   └── Health Check
-│
-└── SEKOLAH & PENDIDIK
-    ├── 01. Public Sekolah (3 requests)
-    │   ├── List Jenjang Pendidikan
-    │   ├── Pengajuan Sekolah Baru (JSON body)
-    │   └── Upload Dokumen Legalitas (multipart/form-data)
-    │
-    ├── 02. Super Admin (6 requests)
-    │   ├── List Sekolah (filter & pagination)
-    │   ├── Detail Sekolah + State Log
-    │   ├── Get Dokumen Legalitas (Presigned URL)
-    │   ├── Verifikasi — Setuju (pengajuan → aktif)
-    │   ├── Verifikasi — Tolak
-    │   └── Update Data Sekolah
-    │
-    ├── 03. Admin Sekolah (3 requests)
-    │   ├── Get My Sekolah
-    │   ├── Update My Sekolah
-    │   └── Pengajuan Ulang (setelah ditolak)
-    │
-    ├── 04. Pendidik Management (9 requests)
-    │   ├── Tambah Pendidik
-    │   ├── List Pendidik
-    │   ├── Detail Pendidik
-    │   ├── Update Pendidik
-    │   ├── Update Status Pendidik (nonaktifkan)
-    │   ├── Tambah Jadwal Mengajar
-    │   ├── List Jadwal Pendidik
-    │   ├── Update Jadwal
-    │   └── Hapus Jadwal
-    │
-    └── 05. Tenaga Pendidik (4 requests)
-        ├── Get My Profile
-        ├── Update My Profile
-        ├── Get Jadwal Harian
-        └── Get Jadwal Minggu Ini
+|-- MOBILE AUTH (9 requests)
+|   |-- 1. Register
+|   |-- 2. Verify OTP
+|   |-- 3. Resend OTP
+|   |-- 4. Login Setelah Verifikasi
+|   |-- 5. Refresh Token
+|   |-- 6. Logout
+|   |-- 7. Status Verifikasi
+|   |-- 8. Google OAuth
+|   |-- 9. Complete OAuth (WA)
+|
+|-- INTERNAL AUTH (8 requests)
+|   |-- 0. Register Super Admin (Protected)
+|   |-- 1. Super Admin Login (Normal)
+|   |-- 2. /auth/me dengan Access Token
+|   |-- 3. Refresh Token
+|   |-- 4. Logout
+|   |-- 5. Internal Login — Admin Sekolah (Force Update)
+|   |-- 6. Force Update — Berhasil
+|   |-- 7. Internal Login Setelah Force Update (Normal)
+|
+|-- UTILITY (1 request)
+|   |-- Health Check
+|
+|-- SEKOLAH & PENDIDIK
+|   |-- 01. Public Sekolah (3 requests)
+|   |   |-- List Jenjang Pendidikan
+|   |   |-- Registrasi Sekolah Baru (multipart/form-data)
+|   |   |-- Tracking Progress
+|   |
+|   |-- 02. Super Admin (6 requests)
+|   |   |-- List Sekolah (filter & pagination)
+|   |   |-- Detail Sekolah + State Log
+|   |   |-- Get Dokumen Legalitas (Presigned URL)
+|   |   |-- Verifikasi — Setuju (menunggu_verifikasi -> aktif)
+|   |   |-- Verifikasi — Tolak
+|   |   |-- Update Data Sekolah
+|   |
+|   |-- 03. Admin Sekolah (3 requests)
+|   |   |-- Get My Sekolah
+|   |   |-- Update My Sekolah
+|   |   |-- Pengajuan Ulang (setelah ditolak)
+|   |
+|   |-- 04. Pendidik Management (9 requests)
+|   |   |-- Tambah Pendidik
+|   |   |-- List Pendidik
+|   |   |-- Detail Pendidik
+|   |   |-- Update Pendidik
+|   |   |-- Update Status Pendidik (nonaktifkan)
+|   |   |-- Tambah Jadwal Mengajar
+|   |   |-- List Jadwal Pendidik
+|   |   |-- Update Jadwal
+|   |   |-- Hapus Jadwal
+|   |
+|   |-- 05. Tenaga Pendidik (4 requests)
+|   |   |-- Get My Profile
+|   |   |-- Update My Profile
+|   |   |-- Get Jadwal Harian
+|   |   |-- Get Jadwal Minggu Ini
 ```
 
 ### Collection Variables
@@ -497,54 +520,54 @@ SIMAS — Full API Collection
 ## Appendix: Flow Diagram Registrasi Sekolah (Text)
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                         HALAMAN REGISTRASI SEKOLAH                           │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                      │
-                                      ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│  STEP 1: ISI DATA SEKOLAH                                                   │
-│  POST /api/v1/sekolah (JSON)                                                │
-│  Response: { id, tracking_code, status: "pengajuan" }                         │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                      │
-                                      ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│  STEP 2: UPLOAD DOKUMEN LEGALITAS                                           │
-│  POST /api/v1/sekolah/{id}/dokumen (multipart/form-data)                    │
-│  - akta_pendirian.pdf (max 3MB)                                              │
-│  - nib.pdf (max 3MB)                                                         │
-│  - sk_pendirian.pdf (max 3MB)                                                │
-│  - siop.pdf (max 3MB)                                                        │
-│  Response: { status: "menunggu_verifikasi" }                                  │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                      │
-                                      ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│  STEP 3: TRACKING PROGRESS (boleh dicek kapan saja)                        │
-│  GET /api/v1/sekolah/progress?tracking_code=...                             │
-│  Response: { status, status_label, state_logs[] }                             │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                      │
-                                      ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│  SUPER ADMIN DASHBOARD                                                       │
-│  - List sekolah dengan status "menunggu_verifikasi"                          │
-│  - Review dokumen via presigned URL                                          │
-│  - Verifikasi: PUT /api/v1/sekolah/{id}/verifikasi                           │
-│    ├── Setuju → status: "aktif" → auto-create admin_sekolah                  │
-│    └── Tolak  → status: "ditolak" → email alasan penolakan                   │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                      │
-                    ┌─────────────────┴─────────────────┐
-                    ▼                                   ▼
-┌──────────────────────────────┐        ┌──────────────────────────────┐
-│  DITERIMA (aktif)            │        │  DITOLAK (ditolak)           │
-│  - Email kredensial dikirim   │        │  - Email alasan dikirim      │
-│  - Admin Sekolah bisa login   │        │  - Bisa pengajuan ulang      │
-│  - Kelola sekolah & pendidik  │        │    via /sekolah/saya/        │
-│                               │        │    pengajuan-ulang           │
-└──────────────────────────────┘        └──────────────────────────────┘
++-----------------------------------------------------------------------------+
+|                         HALAMAN REGISTRASI SEKOLAH                           |
++-----------------------------------------------------------------------------+
+                                      |
+                                      v
++-----------------------------------------------------------------------------+
+|  STEP 1: REGISTRASI SEKOLAH BARU                                           |
+|  POST /api/v1/sekolah/lengkap (multipart/form-data)                        |
+|                                                                              |
+|  Data (text fields):                                                         |
+|    - nama, jenjang, email, npsn, alamat, provinsi_id, ...                   |
+|                                                                              |
+|  Files (4 dokumen wajib):                                                    |
+|    - akta_pendirian.pdf (max 3MB)                                           |
+|    - nib.pdf (max 3MB)                                                      |
+|    - sk_pendirian.pdf (max 3MB)                                             |
+|    - siop.pdf (max 3MB)                                                     |
+|                                                                              |
+|  Response 201: { id, tracking_code, status: "menunggu_verifikasi" }         |
++-----------------------------------------------------------------------------+
+                                      |
+                                      v
++-----------------------------------------------------------------------------+
+|  STEP 2: TRACKING PROGRESS (boleh dicek kapan saja)                          |
+|  GET /api/v1/sekolah/progress?tracking_code=...                            |
+|  Response: { status, status_label, state_logs[] }                           |
++-----------------------------------------------------------------------------+
+                                      |
+                                      v
++-----------------------------------------------------------------------------+
+|  SUPER ADMIN DASHBOARD                                                       |
+|  - List sekolah dengan status "menunggu_verifikasi"                          |
+|  - Review dokumen via presigned URL                                          |
+|  - Verifikasi: PUT /api/v1/sekolah/{id}/verifikasi                           |
+|    |-- Setuju -> status: "aktif" -> auto-create admin_sekolah                |
+|    |-- Tolak  -> status: "ditolak" -> email alasan penolakan                |
++-----------------------------------------------------------------------------+
+                                      |
+                    +-----------------+-----------------+
+                    v                                   v
++--------------------------+        +--------------------------+
+|  DITERIMA (aktif)        |        |  DITOLAK (ditolak)       |
+|  - Email kredensial       |        |  - Email alasan dikirim   |
+|    dikirim               |        |  - Bisa pengajuan ulang   |
+|  - Admin Sekolah login    |        |    via /sekolah/saya/     |
+|  - Kelola sekolah         |        |    pengajuan-ulang       |
+|    & pendidik            |        |                           |
++--------------------------+        +--------------------------+
 ```
 
 ---
