@@ -3,7 +3,8 @@
 
 # Binary
 api.exe
-api
+/api
+main
 
 # Firebase credentials
 firebase_sdk/
